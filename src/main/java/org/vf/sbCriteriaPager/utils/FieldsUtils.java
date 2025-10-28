@@ -32,11 +32,16 @@ public class FieldsUtils {
 
     public static boolean isPrimitive(Field pField) {
         final var clazz = pField.getType();
-        return clazz == String.class ||  Number.class.isAssignableFrom(clazz) || clazz == Boolean.class || clazz == Date.class;
+        return clazz == String.class || Number.class.isAssignableFrom(clazz) || clazz == Boolean.class || clazz == Date.class;
     }
 
-    public static List<String> getFieldsNames(Class clazz) {
+    public static List<String> getFieldsNames(Class<?> clazz) {
         return Arrays.stream(clazz.getDeclaredFields()).map(Field::getName).toList();
     }
 
+    public static Class<?> getTargetClassFieldClassType(Class<?> clazz, String fieldName) throws NoSuchFieldException {
+        final var field = clazz.getDeclaredField(fieldName);
+        return field.getType();
+
+    }
 }

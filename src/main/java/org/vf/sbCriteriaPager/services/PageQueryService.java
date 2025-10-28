@@ -1,5 +1,6 @@
 package org.vf.sbCriteriaPager.services;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import jakarta.persistence.EntityManager;
@@ -21,6 +22,7 @@ import org.vf.sbCriteriaPager.utils.FieldsUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -39,6 +41,7 @@ public class PageQueryService {
         entityManager = pEntityManager;
         objectMapper = new ObjectMapper();
         simpleDateFormat = new SimpleDateFormat("dd-MM-yyyy");
+        objectMapper.setDateFormat(simpleDateFormat);
     }
 
     public <T> PageQueryResponse<T> search(Class entitySource, Class<T> targetClass, int page, int size, List<Column> columnList) throws InvalidArgumentException {
@@ -77,8 +80,15 @@ public class PageQueryService {
         resultList.forEach(t -> {
             final var mTempJsonNode = objectMapper.createObjectNode();
             pColumnList.forEach(c -> {
+                Class<?> classTarget;
+                try {
+                    classTarget = FieldsUtils.getTargetClassFieldClassType(targetClass, c.getAlias());
+                } catch (NoSuchFieldException e) {
+                    throw new RuntimeException(e);
+                }
+                var val = t.get(c.getAlias(), classTarget);
                 switch (c.getValueType()) {
-                    case NUMBER -> mTempJsonNode.put(c.getAlias(), t.get(c.getAlias(), Integer.class));
+                    case NUMBER -> mTempJsonNode.put(c.getAlias(), objectMapper.valueToTree(val));
                     case STRING -> mTempJsonNode.put(c.getAlias(), t.get(c.getAlias(), String.class));
                     case DATE ->
                             mTempJsonNode.put(c.getAlias(), simpleDateFormat.format(t.get(c.getAlias(), Date.class)));
